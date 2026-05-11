@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="DECOLAB — Boutique de décoration et design intérieur au Maroc. Commandez via WhatsApp, paiement à la livraison.">
+  <meta name="theme-color" content="#4A3420">
+  <title>DECOLAB — Décoration Intérieure</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Jost:wght@300;400;500&family=Noto+Kufi+Arabic:wght@300;400;500&display=swap" rel="stylesheet">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="assets/css/style.css">
+
+  <style>
+    /* Shake animation for login */
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      20%      { transform: translateX(-8px); }
+      40%      { transform: translateX(8px); }
+      60%      { transform: translateX(-6px); }
+      80%      { transform: translateX(6px); }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════
+     PRELOADER
+══════════════════════════════════════ -->
+<div id="preloader">
+  <div class="pl-logo">DECO<span>LAB</span></div>
+  <div class="pl-bar-wrap"><div class="pl-bar"></div></div>
+  <div class="pl-tagline" id="pl-tag">Décoration &amp; Design Intérieur</div>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     STORE
+══════════════════════════════════════ -->
+<div id="store">
+
+  <!-- HEADER -->
+  <header>
+    <div class="hdr">
+      <div class="logo">DECO<span>LAB</span></div>
+      <div class="srch">
+        <input id="srch-inp" type="text" placeholder="Rechercher un produit..."
+               oninput="renderProds()" autocomplete="off">
+        <svg class="srch-ic" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+             viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+      </div>
+      <div class="hdr-act">
+        <button class="lang-btn" onclick="toggleLang()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+               fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+            <path d="M2 12h20"/>
+          </svg>
+          <span id="lang-lbl">العربية</span>
+        </button>
+        <button class="adm-btn" onclick="openAdmLogin()" id="adm-btn-t">Admin</button>
+      </div>
+    </div>
+    <nav class="main-nav">
+      <div class="nav-in">
+        <span class="nav-lk active" onclick="fCat('all',this)"        data-fr="Tout"        data-ar="الكل">Tout</span>
+        <span class="nav-lk"        onclick="fCat('salon',this)"       data-fr="Salon"       data-ar="الصالون">Salon</span>
+        <span class="nav-lk"        onclick="fCat('chambre',this)"     data-fr="Chambre"     data-ar="غرفة النوم">Chambre</span>
+        <span class="nav-lk"        onclick="fCat('cuisine',this)"     data-fr="Cuisine"     data-ar="المطبخ">Cuisine</span>
+        <span class="nav-lk"        onclick="fCat('bureau',this)"      data-fr="Bureau"      data-ar="المكتب">Bureau</span>
+        <span class="nav-lk"        onclick="fCat('accessoires',this)" data-fr="Accessoires" data-ar="الإكسسوارات">Accessoires</span>
+      </div>
+    </nav>
+  </header>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-tag" id="h-tag">Collection Printemps 2025</div>
+    <h1 id="h-title">L'art de vivre<br>dans votre espace</h1>
+    <p id="h-desc">Transformez votre intérieur avec nos pièces soigneusement sélectionnées — entre élégance et authenticité.</p>
+    <div class="hero-pills">
+      <div class="pill">🚚 <span id="h-del">Livraison partout au Maroc</span></div>
+      <div class="pill wa">
+        <svg viewBox="0 0 24 24" width="14" height="14" style="fill:#25D366;flex-shrink:0">
+          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/>
+        </svg>
+        <span id="h-wa-pill">Commander via WhatsApp</span>
+      </div>
+      <div class="pill">💳 <span id="h-pod">Paiement à la livraison</span></div>
+    </div>
+    <button class="hero-cta" id="h-cta">Découvrir la collection</button>
+  </section>
+
+  <!-- MAIN CONTENT -->
+  <main>
+    <div class="sec-hdr fade-in">
+      <h2 class="sec-title" id="sec-title">Nos Produits</h2>
+      <span class="sec-count" id="prod-cnt"></span>
+    </div>
+    <div class="filters fade-in">
+      <button class="chip active" onclick="fPrice('all',this)"  data-fr="Tous les prix" data-ar="كل الأسعار">Tous les prix</button>
+      <button class="chip"        onclick="fPrice('low',this)"  data-fr="–500 MAD"      data-ar="أقل من 500 درهم">–500 MAD</button>
+      <button class="chip"        onclick="fPrice('mid',this)"  data-fr="500–1500 MAD"  data-ar="500–1500 درهم">500–1500 MAD</button>
+      <button class="chip"        onclick="fPrice('high',this)" data-fr="+1500 MAD"     data-ar="+1500 درهم">+1500 MAD</button>
+      <select class="srt" onchange="sortProds(this.value)" id="sort-sel">
+        <option value="default">Trier par</option>
+        <option value="price-asc">Prix croissant</option>
+        <option value="price-desc">Prix décroissant</option>
+        <option value="name">Nom A–Z</option>
+      </select>
+    </div>
+    <div class="grid" id="prod-grid"></div>
+  </main>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="ftr-grid">
+      <div class="ftr-brand fade-in">
+        <div class="logo" style="color:var(--white);">DECO<span>LAB</span></div>
+        <p id="ftr-desc">Spécialiste de la décoration et du design intérieur au Maroc.</p>
+        <div class="ftr-wa">
+          <svg viewBox="0 0 24 24" width="16" height="16" style="fill:#25D366;flex-shrink:0">
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/>
+          </svg>
+          <span id="ftr-wa-num">+212 691 010 969</span>
+        </div>
+      </div>
+      <div class="ftr-col fade-in">
+        <h4 id="ftr-nav-h">Navigation</h4>
+        <a data-fr="Accueil"  data-ar="الرئيسية">Accueil</a>
+        <a data-fr="Produits" data-ar="المنتجات">Produits</a>
+        <a data-fr="À propos" data-ar="من نحن">À propos</a>
+        <a data-fr="Contact"  data-ar="اتصل بنا">Contact</a>
+      </div>
+      <div class="ftr-col fade-in">
+        <h4 id="ftr-cont-h">Contact</h4>
+        <a>Casablanca, Maroc</a>
+        <a>contact@decolab.ma</a>
+        <a id="ftr-phone">+212 691 010 969</a>
+      </div>
+    </div>
+    <div class="ftr-btm" id="ftr-btm">© 2025 DECOLAB — Tous droits réservés</div>
+  </footer>
+
+</div><!-- /store -->
+
+
+<!-- ══════════════════════════════════════
+     PRODUCT DETAIL MODAL
+══════════════════════════════════════ -->
+<div id="prod-modal-bg">
+  <div class="prod-modal" id="prod-modal-inner"></div>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     ADMIN LOGIN OVERLAY
+══════════════════════════════════════ -->
+<div id="adm-login-overlay">
+  <div class="login-box">
+    <div class="login-logo">DECO<span>LAB</span></div>
+    <div class="login-subtitle" id="login-sub">Accès sécurisé</div>
+    <div class="fg">
+      <label id="login-pw-lbl">Mot de passe</label>
+      <input type="password" id="login-pw-inp" placeholder="••••••••">
+    </div>
+    <div class="login-err" id="login-err"></div>
+    <button class="login-btn" id="login-btn" onclick="submitLogin()">Se connecter</button>
+    <span class="login-cancel" id="login-cancel" onclick="closeAdmLogin()">Annuler</span>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     ADMIN PANEL
+══════════════════════════════════════ -->
+<div id="adm">
+  <aside class="adm-side">
+    <div class="adm-logo">⬡ DECOLAB</div>
+    <nav class="adm-nav-menu">
+      <div class="adm-ni active" onclick="admSec('dashboard',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+          <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+        </svg>
+        <span id="nav-dash">Tableau de bord</span>
+      </div>
+      <div class="adm-ni" onclick="admSec('products',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+        </svg>
+        <span id="nav-prods">Produits</span>
+      </div>
+    </nav>
+    <div class="adm-exit">
+      <button onclick="closeAdm()" id="exit-btn">← Retour au store</button>
+    </div>
+  </aside>
+
+  <div class="adm-main">
+    <div class="adm-top">
+      <h2 id="adm-top-title">Tableau de bord</h2>
+      <button class="lang-btn" onclick="toggleLang()">
+        <span id="adm-lang-lbl">العربية</span>
+      </button>
+    </div>
+
+    <div class="adm-cnt">
+
+      <!-- WA Number Bar -->
+      <div class="wa-bar">
+        <div class="wa-bar-lbl">
+          <svg viewBox="0 0 24 24" width="20" height="20" style="fill:#25D366">
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/>
+          </svg>
+          <span id="wa-bar-lbl-t">WhatsApp Business</span>
+        </div>
+        <input type="tel" id="wa-inp" value="+212691010969" placeholder="+212 6 00 00 00 00">
+        <button class="wa-bar-sv" onclick="saveWa()" id="wa-sv-t">Enregistrer</button>
+        <div class="wa-bar-st"><div class="wa-dot"></div><span id="wa-st-t">Actif</span></div>
+      </div>
+
+      <!-- DASHBOARD -->
+      <div id="sec-dash">
+        <div class="stats">
+          <div class="st"><div class="st-lbl" id="st-p-lbl">Produits</div><div class="st-val" id="st-p-val">0</div><div class="st-sub" id="st-p-sub">en catalogue</div></div>
+          <div class="st"><div class="st-lbl" id="st-c-lbl">Catégories</div><div class="st-val">5</div><div class="st-sub" id="st-c-sub">actives</div></div>
+          <div class="st"><div class="st-lbl" id="st-l-lbl">Langues</div><div class="st-val">2</div><div class="st-sub">FR / AR</div></div>
+          <div class="st wa-st"><div class="st-lbl">WhatsApp</div><div class="st-val" id="st-wa-val">+212691010969</div><div class="st-sub" id="st-wa-sub">Paiement à la livraison</div></div>
+        </div>
+        <div class="adm-sh">
+          <h3 id="recent-t">Produits récents</h3>
+          <button class="btn-add" onclick="admSec('products',document.querySelectorAll('.adm-ni')[1]);openAddModal()" id="dash-add-t">+ Ajouter</button>
+        </div>
+        <div id="dash-recent"></div>
+      </div>
+
+      <!-- PRODUCTS -->
+      <div id="sec-prods" style="display:none;">
+        <div class="adm-sh">
+          <h3 id="manage-t">Gestion des produits</h3>
+          <button class="btn-add" onclick="openAddModal()" id="add-btn-t">+ Ajouter un produit</button>
+        </div>
+        <table class="atbl">
+          <thead><tr>
+            <th id="th-img">Image</th>
+            <th id="th-nm">Nom</th>
+            <th id="th-ct">Catégorie</th>
+            <th id="th-pr">Prix</th>
+            <th id="th-wa">WhatsApp</th>
+            <th id="th-ac">Actions</th>
+          </tr></thead>
+          <tbody id="adm-tbody"></tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+</div><!-- /admin -->
+
+
+<!-- ══════════════════════════════════════
+     PRODUCT FORM MODAL
+══════════════════════════════════════ -->
+<div class="mbg" id="mbg">
+  <div class="modal">
+    <div class="mhdr">
+      <h3 id="modal-title">Ajouter un produit</h3>
+      <button class="mclose" onclick="closeModal()">✕</button>
+    </div>
+    <div class="mbody">
+      <div class="ftabs">
+        <button class="ftab active" onclick="swTab('fr',this)">🇫🇷 Français</button>
+        <button class="ftab"        onclick="swTab('ar',this)">🇲🇦 العربية</button>
+        <button class="ftab"        onclick="swTab('common',this)" id="tab-gen">⚙ Général</button>
+      </div>
+
+      <!-- FR -->
+      <div class="lform show" id="lf-fr">
+        <div class="fgrid">
+          <div class="fg full">
+            <label>Nom du produit (FR)</label>
+            <input id="f-nfr" placeholder="Ex: Canapé Andalou">
+          </div>
+          <div class="fg full">
+            <label>Description (FR)</label>
+            <textarea id="f-dfr" placeholder="Description détaillée en français..."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- AR -->
+      <div class="lform" id="lf-ar" style="direction:rtl;">
+        <div class="fgrid">
+          <div class="fg full">
+            <label style="font-family:var(--font-ar)">اسم المنتج (AR)</label>
+            <input id="f-nar" style="font-family:var(--font-ar)" placeholder="مثال: أريكة الأندلس">
+          </div>
+          <div class="fg full">
+            <label style="font-family:var(--font-ar)">الوصف (AR)</label>
+            <textarea id="f-dar" style="font-family:var(--font-ar)" placeholder="وصف تفصيلي..."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- COMMON -->
+      <div class="lform" id="lf-common">
+        <div class="fgrid">
+          <div class="fg">
+            <label id="lbl-pr">Prix (MAD)</label>
+            <input type="number" id="f-price" placeholder="850" min="0">
+          </div>
+          <div class="fg">
+            <label id="lbl-ct">Catégorie</label>
+            <select id="f-cat">
+              <option value="salon">Salon / الصالون</option>
+              <option value="chambre">Chambre / غرفة النوم</option>
+              <option value="cuisine">Cuisine / المطبخ</option>
+              <option value="bureau">Bureau / المكتب</option>
+              <option value="accessoires">Accessoires / الإكسسوارات</option>
+            </select>
+          </div>
+          <div class="fg">
+            <label id="lbl-bd">Badge promo</label>
+            <input id="f-badge" placeholder="Nouveauté / جديد">
+          </div>
+          <div class="fg">
+            <label id="lbl-em">Icône emoji</label>
+            <input id="f-emoji" maxlength="4" placeholder="🛋️">
+          </div>
+          <hr class="fdiv">
+          <div class="fg full">
+            <label id="lbl-im">Images produit</label>
+            <div class="img-drop" onclick="document.getElementById('img-inp').click()">
+              <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24"
+                   fill="none" stroke="var(--brown-400)" stroke-width="1.2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
+              <p id="upl-hint">Cliquez pour ajouter des images</p>
+            </div>
+            <input type="file" id="img-inp" accept="image/*" multiple
+                   style="display:none" onchange="prevImgs(this)">
+            <div class="img-prev" id="img-prev"></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    <div class="mftr">
+      <button class="btn-cx" onclick="closeModal()" id="btn-cx">Annuler</button>
+      <button class="btn-sv" onclick="saveProduct()" id="btn-sv">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- SCROLL TOP -->
+<button class="scroll-top" onclick="scrollTop()" title="Haut de page">
+  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+       fill="none" stroke="currentColor" stroke-width="2">
+    <path d="M18 15l-6-6-6 6"/>
+  </svg>
+</button>
+
+
+<!-- Scripts -->
+<script src="assets/js/app.js"></script>
+</body>
+</html>

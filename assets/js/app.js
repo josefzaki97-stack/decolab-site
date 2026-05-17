@@ -501,29 +501,28 @@ function openAddModal() {
   document.getElementById('mbg').classList.add('show');
 }
 
+// نسخة معدلة من openEdit (لتحميل البيانات من Firebase)
 function openEdit(id) {
-  const p = prods.find(x => x.id === id);
+  const p = prods.find(x => x.id == id);
   if (!p) return;
+  
   editId = id;
   imgs = [...(p.images || [])];
-  document.getElementById('f-nfr').value   = p.nfr;
-  document.getElementById('f-dfr').value   = p.dfr;
-  document.getElementById('f-nar').value   = p.nar;
-  document.getElementById('f-dar').value   = p.dar;
-  document.getElementById('f-price').value = p.price;
-  document.getElementById('f-cat').value   = p.cat;
+  
+  document.getElementById('f-nfr').value   = p.nfr || '';
+  document.getElementById('f-dfr').value   = p.dfr || '';
+  document.getElementById('f-nar').value   = p.nar || '';
+  document.getElementById('f-dar').value   = p.dar || '';
+  document.getElementById('f-price').value = p.price || '';
+  document.getElementById('f-cat').value   = p.cat || 'salon';
   document.getElementById('f-badge').value = p.badge || '';
   document.getElementById('f-emoji').value = p.emoji || '';
-  prevRender();
+  
+  prevRender(); // عرض الصور الموجودة
+  
   document.getElementById('modal-title').textContent = T[lang].mEdit;
   swTab('fr', document.querySelector('.ftab'));
   document.getElementById('mbg').classList.add('show');
-}
-
-function closeModal() {
-  document.getElementById('mbg').classList.remove('show');
-  editId = null;
-  imgs = [];
 }
 
 function clrForm() {
@@ -556,12 +555,18 @@ function prevRender() {
 
 function rmImg(i) { imgs.splice(i, 1); prevRender(); }
 
-function saveProduct() {
+// نسخة معدلة من saveProduct للعمل مع Firebase
+async function saveProduct() {
   const nfr   = document.getElementById('f-nfr').value.trim();
   const nar   = document.getElementById('f-nar').value.trim();
   const price = parseFloat(document.getElementById('f-price').value);
-  if (!nfr || !nar || isNaN(price)) { showToast(T[lang].valErr); return; }
-  const d = {
+  
+  if (!nfr || !nar || isNaN(price)) { 
+    showToast(T[lang].valErr); 
+    return; 
+  }
+  
+  const productData = {
     nfr, nar,
     dfr:   document.getElementById('f-dfr').value.trim(),
     dar:   document.getElementById('f-dar').value.trim(),
@@ -569,29 +574,51 @@ function saveProduct() {
     cat:   document.getElementById('f-cat').value,
     badge: document.getElementById('f-badge').value.trim(),
     emoji: document.getElementById('f-emoji').value.trim() || '🏠',
-    images: [...imgs]
+    images: []  // سيتم تعبئته لاحقاً
   };
+  
+  // جمع الصور الجديدة (كائنات File)
+  const imageInput = document.getElementById('img-inp');
+  const newImageFiles = imageInput.files ? Array.from(imageInput.files) : [];
+  
+  // إذا كان تعديل (editId موجود)
   if (editId) {
-    const i = prods.findIndex(p => p.id === editId);
-    prods[i] = { ...prods[i], ...d };
-  } else {
-    prods.push({ id: Date.now(), ...d });
+    // الصور التي تمت إزالتها
+    const oldImages = prods.find(p => p.id == editId)?.images || [];
+    const removedImages = oldImages.filter(img => !imgs.includes(img));
+    
+    const result = await updateProductInFirebase(editId, productData, newImageFiles, removedImages);
+    if (result.success) {
+      closeModal();
+      showToast(T[lang].toastSv, 'ok-t');
+    } else {
+      showToast("Erreur: " + result.error, "error");
+    }
+  } 
+  // إضافة منتج جديد
+  else {
+    const result = await addProductToFirebase(productData, newImageFiles);
+    if (result.success) {
+      closeModal();
+      showToast(T[lang].toastSv, 'ok-t');
+    } else {
+      showToast("Erreur: " + result.error, "error");
+    }
   }
-  closeModal();
-  renderProds();
-  renderAdmTbl();
-  renderDashRecent();
-  showToast(T[lang].toastSv, 'ok-t');
 }
 
-function delProd(id) {
+
+async function delProd(id) {
   if (!confirm(T[lang].confirmDl)) return;
-  prods = prods.filter(p => p.id !== id);
-  renderProds();
-  renderAdmTbl();
-  renderDashRecent();
-  showToast(T[lang].toastDl);
+  
+  const result = await deleteProductFromFirebase(id);
+  if (result.success) {
+    showToast(T[lang].toastDl);
+  } else {
+    showToast("Erreur: " + result.error, "error");
+  }
 }
+
 
 /* ─── TOAST ─── */
 function showToast(msg, cls = '') {
@@ -631,3 +658,396 @@ document.addEventListener('DOMContentLoaded', () => {
   applyLang();
   renderProds();
 });
+
+
+/* ═══════════════════════════════════════
+   FIREBASE IMPORT & CONFIG
+   ═══════════════════════════════════════ */
+
+// استيراد Firebase SDK
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { 
+  getFirestore, 
+  collection, 
+  getDocs, 
+  getDoc,
+  doc, 
+  addDoc, 
+  updateDoc, 
+  deleteDoc,
+  setDoc,
+  query,
+  orderBy,
+  limit
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import {
+  getStorage,
+  ref,
+  uploadBytes,
+  getDownloadURL,
+  deleteObject
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
+
+// ⚠️ IMPORTANT: Paste your Firebase config here (from step 4)
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_AUTH_DOMAIN",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_STORAGE_BUCKET",
+  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+
+// تهيئة Firebase
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const storage = getStorage(app);
+
+// حذف مصفوفة prods الثابتة (علّقها أو احذفها)
+// let prods = [ ... ];  // <-- لن نحتاجها بعد الآن
+
+// استبدلها بمصفوفة فارغة ستتملأ من Firebase
+let prods = [];
+let isLoading = false;
+
+/* ─── FIREBASE CRUD OPERATIONS ─── */
+
+// جلب جميع المنتجات من Firebase
+async function loadProductsFromFirebase() {
+  if (isLoading) return;
+  isLoading = true;
+  
+  try {
+    showToast("جاري تحميل المنتجات...", "loading");
+    
+    const productsCol = collection(db, "products");
+    const productSnapshot = await getDocs(productsCol);
+    
+    prods = productSnapshot.docs.map(doc => ({
+      id: doc.id,  // استخدام id من Firebase
+      ...doc.data()
+    }));
+    
+    // تحويل id من string إلى number إذا لزم الأمر
+    prods = prods.map(p => ({
+      ...p,
+      id: typeof p.id === 'string' ? parseInt(p.id) || p.id : p.id
+    }));
+    
+    console.log(`✅ تم تحميل ${prods.length} منتج من Firebase`);
+    
+    // تحديث واجهة المستخدم
+    renderProds();
+    if (typeof renderAdmTbl === 'function') renderAdmTbl();
+    if (typeof renderDashRecent === 'function') renderDashRecent();
+    
+    showToast(`✅ ${prods.length} produit chargé`, "ok-t");
+    
+  } catch (error) {
+    console.error("❌ خطأ في تحميل المنتجات:", error);
+    showToast("Erreur de chargement des produits", "error");
+  } finally {
+    isLoading = false;
+  }
+}
+
+// رفع صورة إلى Firebase Storage
+async function uploadImageToFirebase(file, productId, index) {
+  try {
+    // إنشاء اسم فريد للصورة
+    const extension = file.name.split('.').pop();
+    const fileName = `${productId}_${Date.now()}_${index}.${extension}`;
+    const imageRef = ref(storage, `products/${productId}/${fileName}`);
+    
+    // رفع الصورة
+    await uploadBytes(imageRef, file);
+    
+    // الحصول على رابط التحميل
+    const downloadURL = await getDownloadURL(imageRef);
+    return downloadURL;
+    
+  } catch (error) {
+    console.error("❌ خطأ في رفع الصورة:", error);
+    return null;
+  }
+}
+
+// إضافة منتج جديد إلى Firebase
+async function addProductToFirebase(productData, imageFiles = []) {
+  try {
+    // إنشاء Document جديد في Firestore
+    const productsCol = collection(db, "products");
+    const docRef = await addDoc(productsCol, {
+      ...productData,
+      createdAt: new Date().toISOString()
+    });
+    
+    const newProductId = docRef.id;
+    
+    // رفع الصور إلى Firebase Storage
+    const imageUrls = [];
+    for (let i = 0; i < imageFiles.length; i++) {
+      const url = await uploadImageToFirebase(imageFiles[i], newProductId, i);
+      if (url) imageUrls.push(url);
+    }
+    
+    // تحديث المنتج بروابط الصور
+    if (imageUrls.length > 0) {
+      const productRef = doc(db, "products", newProductId);
+      await updateDoc(productRef, { images: imageUrls });
+    }
+    
+    // إعادة تحميل المنتجات
+    await loadProductsFromFirebase();
+    
+    return { success: true, id: newProductId };
+    
+  } catch (error) {
+    console.error("❌ خطأ في إضافة المنتج:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+// تحديث منتج موجود في Firebase
+async function updateProductInFirebase(productId, productData, newImageFiles = [], removedImages = []) {
+  try {
+    const productRef = doc(db, "products", productId);
+    
+    // حذف الصور المزالة من Storage
+    for (const imageUrl of removedImages) {
+      try {
+        const imageRef = ref(storage, imageUrl);
+        await deleteObject(imageRef);
+      } catch (e) { console.warn("لم يتم حذف الصورة:", e); }
+    }
+    
+    // رفع الصور الجديدة
+    const currentProduct = prods.find(p => p.id == productId);
+    let imageUrls = currentProduct?.images || [];
+    
+    // إزالة الصور المحددة
+    imageUrls = imageUrls.filter(url => !removedImages.includes(url));
+    
+    // إضافة الصور الجديدة
+    for (let i = 0; i < newImageFiles.length; i++) {
+      const url = await uploadImageToFirebase(newImageFiles[i], productId, Date.now() + i);
+      if (url) imageUrls.push(url);
+    }
+    
+    // تحديث المنتج في Firestore
+    await updateDoc(productRef, {
+      ...productData,
+      images: imageUrls,
+      updatedAt: new Date().toISOString()
+    });
+    
+    // إعادة تحميل المنتجات
+    await loadProductsFromFirebase();
+    
+    return { success: true };
+    
+  } catch (error) {
+    console.error("❌ خطأ في تحديث المنتج:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+// حذف منتج من Firebase
+async function deleteProductFromFirebase(productId) {
+  try {
+    // حذف جميع صور المنتج من Storage
+    const product = prods.find(p => p.id == productId);
+    if (product && product.images && product.images.length > 0) {
+      for (const imageUrl of product.images) {
+        try {
+          const imageRef = ref(storage, imageUrl);
+          await deleteObject(imageRef);
+        } catch (e) { console.warn("لم يتم حذف الصورة:", e); }
+      }
+    }
+    
+    // حذف المستند من Firestore
+    const productRef = doc(db, "products", String(productId));
+    await deleteDoc(productRef);
+    
+    // إعادة تحميل المنتجات
+    await loadProductsFromFirebase();
+    
+    return { success: true };
+    
+  } catch (error) {
+    console.error("❌ خطأ في حذف المنتج:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+/* ─── FIREBASE CRUD OPERATIONS ─── */
+
+// جلب جميع المنتجات من Firebase
+async function loadProductsFromFirebase() {
+  if (isLoading) return;
+  isLoading = true;
+  
+  try {
+    showToast("جاري تحميل المنتجات...", "loading");
+    
+    const productsCol = collection(db, "products");
+    const productSnapshot = await getDocs(productsCol);
+    
+    prods = productSnapshot.docs.map(doc => ({
+      id: doc.id,  // استخدام id من Firebase
+      ...doc.data()
+    }));
+    
+    // تحويل id من string إلى number إذا لزم الأمر
+    prods = prods.map(p => ({
+      ...p,
+      id: typeof p.id === 'string' ? parseInt(p.id) || p.id : p.id
+    }));
+    
+    console.log(`✅ تم تحميل ${prods.length} منتج من Firebase`);
+    
+    // تحديث واجهة المستخدم
+    renderProds();
+    if (typeof renderAdmTbl === 'function') renderAdmTbl();
+    if (typeof renderDashRecent === 'function') renderDashRecent();
+    
+    showToast(`✅ ${prods.length} produit chargé`, "ok-t");
+    
+  } catch (error) {
+    console.error("❌ خطأ في تحميل المنتجات:", error);
+    showToast("Erreur de chargement des produits", "error");
+  } finally {
+    isLoading = false;
+  }
+}
+
+// رفع صورة إلى Firebase Storage
+async function uploadImageToFirebase(file, productId, index) {
+  try {
+    // إنشاء اسم فريد للصورة
+    const extension = file.name.split('.').pop();
+    const fileName = `${productId}_${Date.now()}_${index}.${extension}`;
+    const imageRef = ref(storage, `products/${productId}/${fileName}`);
+    
+    // رفع الصورة
+    await uploadBytes(imageRef, file);
+    
+    // الحصول على رابط التحميل
+    const downloadURL = await getDownloadURL(imageRef);
+    return downloadURL;
+    
+  } catch (error) {
+    console.error("❌ خطأ في رفع الصورة:", error);
+    return null;
+  }
+}
+
+// إضافة منتج جديد إلى Firebase
+async function addProductToFirebase(productData, imageFiles = []) {
+  try {
+    // إنشاء Document جديد في Firestore
+    const productsCol = collection(db, "products");
+    const docRef = await addDoc(productsCol, {
+      ...productData,
+      createdAt: new Date().toISOString()
+    });
+    
+    const newProductId = docRef.id;
+    
+    // رفع الصور إلى Firebase Storage
+    const imageUrls = [];
+    for (let i = 0; i < imageFiles.length; i++) {
+      const url = await uploadImageToFirebase(imageFiles[i], newProductId, i);
+      if (url) imageUrls.push(url);
+    }
+    
+    // تحديث المنتج بروابط الصور
+    if (imageUrls.length > 0) {
+      const productRef = doc(db, "products", newProductId);
+      await updateDoc(productRef, { images: imageUrls });
+    }
+    
+    // إعادة تحميل المنتجات
+    await loadProductsFromFirebase();
+    
+    return { success: true, id: newProductId };
+    
+  } catch (error) {
+    console.error("❌ خطأ في إضافة المنتج:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+// تحديث منتج موجود في Firebase
+async function updateProductInFirebase(productId, productData, newImageFiles = [], removedImages = []) {
+  try {
+    const productRef = doc(db, "products", productId);
+    
+    // حذف الصور المزالة من Storage
+    for (const imageUrl of removedImages) {
+      try {
+        const imageRef = ref(storage, imageUrl);
+        await deleteObject(imageRef);
+      } catch (e) { console.warn("لم يتم حذف الصورة:", e); }
+    }
+    
+    // رفع الصور الجديدة
+    const currentProduct = prods.find(p => p.id == productId);
+    let imageUrls = currentProduct?.images || [];
+    
+    // إزالة الصور المحددة
+    imageUrls = imageUrls.filter(url => !removedImages.includes(url));
+    
+    // إضافة الصور الجديدة
+    for (let i = 0; i < newImageFiles.length; i++) {
+      const url = await uploadImageToFirebase(newImageFiles[i], productId, Date.now() + i);
+      if (url) imageUrls.push(url);
+    }
+    
+    // تحديث المنتج في Firestore
+    await updateDoc(productRef, {
+      ...productData,
+      images: imageUrls,
+      updatedAt: new Date().toISOString()
+    });
+    
+    // إعادة تحميل المنتجات
+    await loadProductsFromFirebase();
+    
+    return { success: true };
+    
+  } catch (error) {
+    console.error("❌ خطأ في تحديث المنتج:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+// حذف منتج من Firebase
+async function deleteProductFromFirebase(productId) {
+  try {
+    // حذف جميع صور المنتج من Storage
+    const product = prods.find(p => p.id == productId);
+    if (product && product.images && product.images.length > 0) {
+      for (const imageUrl of product.images) {
+        try {
+          const imageRef = ref(storage, imageUrl);
+          await deleteObject(imageRef);
+        } catch (e) { console.warn("لم يتم حذف الصورة:", e); }
+      }
+    }
+    
+    // حذف المستند من Firestore
+    const productRef = doc(db, "products", String(productId));
+    await deleteDoc(productRef);
+    
+    // إعادة تحميل المنتجات
+    await loadProductsFromFirebase();
+    
+    return { success: true };
+    
+  } catch (error) {
+    console.error("❌ خطأ في حذف المنتج:", error);
+    return { success: false, error: error.message };
+  }
+}

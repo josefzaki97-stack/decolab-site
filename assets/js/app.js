@@ -396,6 +396,7 @@ function saveWa() {
   const v = document.getElementById('wa-inp').value.trim();
   if (!v) return;
   waNum = v;
+  localStorage.setItem('decolab_wa_num', v);
   document.getElementById('st-wa-val').textContent = v;
   document.getElementById('ftr-phone').textContent = v;
   document.getElementById('ftr-wa-num').textContent = v;
@@ -646,6 +647,8 @@ document.addEventListener('keydown', e => {
 
 /* ─── MODAL BG CLICK ─── */
 document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+  
   document.getElementById('mbg').addEventListener('click', e => {
     if (e.target === document.getElementById('mbg')) closeModal();
   });
@@ -655,8 +658,16 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('adm-login-overlay').addEventListener('click', e => {
     if (e.target === document.getElementById('adm-login-overlay')) closeAdmLogin();
   });
+  
   applyLang();
-  renderProds();
+  
+  // ⭐ تحميل المنتجات من Firebase بدلاً من البيانات الثابتة
+  loadProductsFromFirebase();
+  
+  // تعيين رقم WhatsApp من localStorage إذا وجد
+  const savedWa = localStorage.getItem('decolab_wa_num');
+  if (savedWa) waNum = savedWa;
+  document.getElementById('wa-inp').value = waNum;
 });
 
 

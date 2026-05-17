@@ -379,3 +379,34 @@
 <script src="assets/js/app.js"></script>
 </body>
 </html>
+
+<script type="module">
+  // تهيئة Firebase - الصق إعداداتك هنا
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { getFirestore, collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+  
+  const firebaseConfig = {
+    apiKey: "أكتب_apiKey_هنا",
+    authDomain: "أكتب_authDomain_هنا",
+    projectId: "أكتب_projectId_هنا",
+    storageBucket: "أكتب_storageBucket_هنا",
+    messagingSenderId: "أكتب_messagingSenderId_هنا",
+    appId: "أكتب_appId_هنا"
+  };
+  
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  
+  // الآن قاعدة البيانات جاهزة للاستخدام في موقعك
+  
+  // مثال: جلب المنتجات وعرضها في صفحة HTML
+  async function loadProducts() {
+    const querySnapshot = await getDocs(collection(db, "products"));
+    querySnapshot.forEach((doc) => {
+      console.log(doc.id, "=>", doc.data());
+      // يمكنك هنا إضافة كود لعرض المنتجات في HTML الخاص بموقعك
+    });
+  }
+  
+  loadProducts();
+</script>

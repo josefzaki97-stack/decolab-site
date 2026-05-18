@@ -1,100 +1,43 @@
 # 🏠 DECOLAB — Site E-commerce Décoration Intérieure
+# Firebase Edition
 
-## 📁 Structure du dossier
-
+## 📁 Structure
 ```
 decolab-site/
-├── index.html              ← Page principale (ouvrir dans le navigateur)
+├── index.html              ← Ouvrir dans le navigateur
 ├── assets/
-│   ├── css/
-│   │   └── style.css       ← Tous les styles du site
-│   └── js/
-│       └── app.js          ← Toute la logique (produits, admin, WhatsApp...)
-└── README.md               ← Ce fichier
+│   ├── css/style.css       ← Tous les styles
+│   └── js/app.js           ← Logique + Firebase + produits
+└── README.md
 ```
 
----
+## 🚀 Lancer le site
+Double-cliquez sur **index.html**
 
-## 🚀 Comment lancer le site
+## 🌐 Mettre en ligne gratuitement
+| Service | Méthode |
+|---------|---------|
+| **Netlify** | Glissez le dossier sur https://app.netlify.com/drop |
+| **Vercel**  | https://vercel.com |
+| **GitHub Pages** | Uploadez sur GitHub → Settings → Pages |
 
-### Option 1 — En local (simple)
-Double-cliquez sur `index.html` pour l'ouvrir dans votre navigateur.
-
-### Option 2 — Hébergement gratuit recommandé
-
-#### 🌐 Netlify (le plus simple, gratuit)
-1. Créez un compte sur [netlify.com](https://netlify.com)
-2. Glissez-déposez le dossier `decolab-site/` sur la zone de dépôt
-3. Votre site est en ligne en 30 secondes avec une URL du type `decolab-xyz.netlify.app`
-
-#### 🌐 GitHub Pages (gratuit)
-1. Créez un repo GitHub
-2. Uploadez les fichiers
-3. Activez GitHub Pages dans les paramètres
-
-#### 🌐 Vercel (gratuit)
-1. Créez un compte sur [vercel.com](https://vercel.com)
-2. Importez votre dossier
-3. Déploiement automatique
-
----
+## 🔥 Configurer Firebase
+1. Créez un projet sur https://console.firebase.google.com
+2. Activez **Firestore Database** (mode test)
+3. Paramètres → Vos applications → Ajouter app Web → copiez les clés
+4. Dans le site : bouton **Admin** → onglet **Firebase** → collez les clés → Connecter
 
 ## 🔐 Accès Admin
+- Bouton **Admin** en haut à droite
+- Mot de passe : `decolab2025`
+- Pour changer : modifiez `const ADMIN_PASS` dans `assets/js/app.js`
 
-- **Bouton** : cliquez sur "Admin" en haut à droite
-- **Mot de passe** : `decolab2025`
-- Pour changer le mot de passe, modifiez la ligne dans `assets/js/app.js` :
-  ```javascript
-  const ADMIN_PASS = 'decolab2025';
-  ```
-
----
-
-## 📱 Fonctionnalités
-
-| Fonctionnalité | Description |
-|---|---|
-| 🌍 Bilingue FR/AR | Bascule complète Français ↔ Arabe avec RTL automatique |
-| 📱 WhatsApp | Bouton de commande sur chaque produit avec message pré-rempli |
-| 🔗 Partage WA | Icône de partage sur les cartes + bouton dans la fenêtre produit |
-| 🖼️ Fenêtre produit | Clic sur carte = modal détail avec photo, description, commande |
-| 🔐 Admin sécurisé | Mot de passe requis pour accéder au panel admin |
-| ➕ Ajout produits | Images, nom FR/AR, description, prix, catégorie, badge |
-| 🎬 Animation | Preloader animé + animations d'entrée au scroll |
-| 🔍 Recherche | Barre de recherche en temps réel |
-| 🏷️ Filtres | Par catégorie, fourchette de prix, tri |
-| 💳 Paiement | Badge "Paiement à la livraison" sur chaque produit |
-
----
-
-## 📞 WhatsApp configuré
-
-Numéro actuel : **+212 691 010 969**
-- Modifiable depuis le panel Admin → barre WhatsApp en haut
-- Ou directement dans `app.js` ligne : `let waNum = '+212691010969';`
-
----
-
-## 🎨 Personnalisation rapide
-
-| Élément | Fichier | Ligne |
-|---|---|---|
-| Couleurs principales | `style.css` | Variables `:root` en haut |
-| Mot de passe admin | `app.js` | `const ADMIN_PASS = ...` |
-| Numéro WhatsApp | `app.js` | `let waNum = ...` |
-| Produits de démo | `app.js` | Tableau `prods = [...]` |
-| Nom du site | `index.html` | Balise `<title>` et `.logo` |
-
----
+## 📱 WhatsApp
+Numéro configuré : **+212 691 010 969**
+Modifiable dans Admin → barre WhatsApp
 
 ## ✅ Compatible
-
-- ✅ Chrome, Firefox, Safari, Edge
-- ✅ Mobile (responsive)
-- ✅ Tablet
-- ✅ RTL (Arabe)
-- ✅ Aucune dépendance externe (sauf Google Fonts)
+Chrome · Firefox · Safari · Edge · Mobile · Tablette · Arabe (RTL)
 
 ---
-
-*Développé pour DECOLAB — © 2025*
+*DECOLAB © 2025*

@@ -1,33 +1,18 @@
 <!DOCTYPE html>
+<!-- DECOLAB — Firebase Edition -->
 <html lang="fr" dir="ltr">
-<head> 
+<head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="DECOLAB — Boutique de décoration et design intérieur au Maroc. Commandez via WhatsApp, paiement à la livraison.">
   <meta name="theme-color" content="#4A3420">
   <title>DECOLAB — Décoration Intérieure</title>
-
-  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Jost:wght@300;400;500&family=Noto+Kufi+Arabic:wght@300;400;500&display=swap" rel="stylesheet">
-
-  <!-- Styles -->
   <link rel="stylesheet" href="assets/css/style.css">
-
-  <style>
-    /* Shake animation for login */
-    @keyframes shake {
-      0%,100% { transform: translateX(0); }
-      20%      { transform: translateX(-8px); }
-      40%      { transform: translateX(8px); }
-      60%      { transform: translateX(-6px); }
-      80%      { transform: translateX(6px); }
-    }
-  </style> 
 </head>
 <body>
-
 <!-- ══════════════════════════════════════
      PRELOADER
 ══════════════════════════════════════ -->
@@ -198,8 +183,30 @@
         </svg>
         <span id="nav-prods">Produits</span>
       </div>
+      <div class="adm-ni" onclick="admSec('database',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <ellipse cx="12" cy="5" rx="9" ry="3"/>
+          <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+          <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+        </svg>
+        <span id="nav-db">Base de données</span>
+      </div>
+      <div class="adm-ni" onclick="admSec('firebase',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M12 2L2 19.7h20L12 2z"/><path d="M12 2l4.5 11.5L12 17l-4.5-3.5L12 2z"/>
+        </svg>
+        <span>Firebase</span>
+      </div>
     </nav>
     <div class="adm-exit">
+      <button class="dl-site-btn" onclick="downloadSite()" id="dl-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        <span id="dl-btn-lbl">Télécharger le site</span>
+      </button>
       <button onclick="closeAdm()" id="exit-btn">← Retour au store</button>
     </div>
   </aside>
@@ -225,6 +232,7 @@
         <input type="tel" id="wa-inp" value="+212691010969" placeholder="+212 6 00 00 00 00">
         <button class="wa-bar-sv" onclick="saveWa()" id="wa-sv-t">Enregistrer</button>
         <div class="wa-bar-st"><div class="wa-dot"></div><span id="wa-st-t">Actif</span></div>
+        <span id="db-status-badge" style="padding:4px 10px;border-radius:20px;font-size:.72rem;margin-left:auto">⚠️ Mode démo</span>
       </div>
 
       <!-- DASHBOARD -->
@@ -261,9 +269,110 @@
         </table>
       </div>
 
+      <!-- DATABASE SECTION -->
+      <div id="sec-db" style="display:none;">
+        <!-- IO bar -->
+        <div class="db-io-bar">
+          <span id="db-io-label">Base de données locale — IndexedDB</span>
+          <button class="db-io-btn export" onclick="dbExportJSON()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span id="db-export-lbl">Exporter JSON</span>
+          </button>
+          <label class="db-io-btn import-btn" style="cursor:pointer;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <span id="db-import-lbl">Importer JSON</span>
+            <input type="file" accept=".json" style="display:none" onchange="dbImportJSON(this)">
+          </label>
+        </div>
+        <!-- Stats chips -->
+        <div class="db-stats-row" id="db-stats-row"></div>
+        <!-- Topbar: search + filter + add -->
+        <div class="db-topbar">
+          <div class="db-search-wrap">
+            <input type="text" id="db-search" placeholder="Rechercher dans la base..." oninput="dbRender()">
+            <select class="db-filter-sel" id="db-filter-cat" onchange="dbRender()">
+              <option value="all">Toutes catégories</option>
+              <option value="salon">Salon / الصالون</option>
+              <option value="chambre">Chambre / غرفة النوم</option>
+              <option value="cuisine">Cuisine / المطبخ</option>
+              <option value="bureau">Bureau / المكتب</option>
+              <option value="accessoires">Accessoires / الإكسسوارات</option>
+            </select>
+          </div>
+          <button class="btn-add" onclick="admSec('products',document.querySelectorAll('.adm-ni')[1]);openAddModal()" id="db-add-btn">+ Ajouter</button>
+        </div>
+        <!-- Table -->
+        <div class="db-table-wrap">
+          <table class="db-table">
+            <thead>
+              <tr>
+                <th onclick="dbSort('img')"  style="width:60px" id="dbth-img">Image</th>
+                <th onclick="dbSort('id')"   id="dbth-id">ID <span class="sort-arrow" id="dbarr-id"></span></th>
+                <th onclick="dbSort('nfr')"  id="dbth-name">Nom <span class="sort-arrow" id="dbarr-nfr"></span></th>
+                <th onclick="dbSort('cat')"  id="dbth-cat">Catégorie <span class="sort-arrow" id="dbarr-cat"></span></th>
+                <th onclick="dbSort('price')" id="dbth-price">Prix <span class="sort-arrow" id="dbarr-price"></span></th>
+                <th onclick="dbSort('date')" id="dbth-date">Ajouté le <span class="sort-arrow" id="dbarr-date"></span></th>
+                <th id="dbth-act">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="db-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+      <!-- FIREBASE CONFIG SECTION -->
+      <div id="sec-fb" style="display:none;">
+        <div style="max-width:600px;margin:0 auto;">
+          <div style="background:linear-gradient(135deg,#FF6B35,#F7C59F);border-radius:8px;padding:2rem;margin-bottom:2rem;color:#fff;display:flex;align-items:center;gap:1.5rem;">
+            <svg viewBox="0 0 24 24" width="48" height="48" style="fill:#fff;flex-shrink:0">
+              <path d="M12 2L2 19.7h20L12 2z"/><path opacity=".5" d="M12 2l4.5 11.5L12 17l-4.5-3.5L12 2z"/>
+            </svg>
+            <div>
+              <h2 id="fb-config-title" style="font-family:var(--font-d);font-size:1.6rem;font-weight:500;margin-bottom:.4rem">Configuration Firebase</h2>
+              <p id="fb-config-desc" style="font-size:.85rem;opacity:.9">Entrez vos clés Firebase pour activer la base de données cloud.</p>
+            </div>
+          </div>
+          <div style="background:var(--white);border:1px solid var(--border);border-radius:4px;padding:2rem;">
+            <div style="display:grid;gap:1rem;">
+              <div class="fg"><label>API Key</label><input id="fb-api-key" placeholder="AIzaSy..."></div>
+              <div class="fg"><label>Auth Domain</label><input id="fb-auth-domain" placeholder="mon-projet.firebaseapp.com"></div>
+              <div class="fg"><label>Project ID</label><input id="fb-project-id" placeholder="mon-projet"></div>
+              <div class="fg"><label>Storage Bucket</label><input id="fb-storage" placeholder="mon-projet.appspot.com"></div>
+              <div class="fg"><label>Messaging Sender ID</label><input id="fb-sender-id" placeholder="123456789"></div>
+              <div class="fg"><label>App ID</label><input id="fb-app-id" placeholder="1:123:web:abc..."></div>
+            </div>
+            <div style="margin-top:1.5rem;display:flex;gap:1rem;align-items:center;">
+              <button class="btn-add" onclick="saveFbConfig()" id="fb-save-config-btn" style="background:#FF6B35">Connecter Firebase</button>
+              <a href="https://console.firebase.google.com" target="_blank" style="font-size:.8rem;color:var(--accent)">Ouvrir la console Firebase →</a>
+            </div>
+            <div style="margin-top:1.5rem;padding:1rem;background:var(--gray-50);border-radius:4px;font-size:.78rem;color:var(--muted);line-height:1.8;">
+              <strong>Guide rapide :</strong><br>
+              1. Créez un projet sur <a href="https://console.firebase.google.com" target="_blank" style="color:var(--accent)">console.firebase.google.com</a><br>
+              2. Activez <strong>Firestore Database</strong> (mode test pour commencer)<br>
+              3. Allez dans Paramètres du projet → Vos applications → Ajoutez une app Web<br>
+              4. Copiez les clés dans les champs ci-dessus et cliquez Connecter
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 </div><!-- /admin -->
+
+<!-- DB RECORD DRAWER -->
+<div id="db-drawer-bg">
+  <div class="db-drawer">
+    <div class="db-drawer-hdr">
+      <h3 id="db-drawer-title">Détail du produit</h3>
+      <button class="db-drawer-close" onclick="closeDbDrawer()">✕</button>
+    </div>
+    <div class="db-drawer-body" id="db-drawer-body"></div>
+    <div class="db-drawer-ftr" id="db-drawer-ftr"></div>
+  </div>
+</div>
 
 
 <!-- ══════════════════════════════════════
@@ -363,6 +472,23 @@
 </div>
 
 
+<!-- DOWNLOAD OVERLAY -->
+<div id="dl-overlay">
+  <div class="dl-box">
+    <div class="dl-box-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="7 10 12 15 17 10"/>
+        <line x1="12" y1="15" x2="12" y2="3"/>
+      </svg>
+    </div>
+    <h3 id="dl-title">Préparation du site...</h3>
+    <p id="dl-desc">Intégration des produits et des images en cours.</p>
+    <div class="dl-progress-wrap"><div class="dl-progress-bar" id="dl-bar"></div></div>
+    <div class="dl-status" id="dl-status">0%</div>
+  </div>
+</div>
+
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
@@ -376,37 +502,7 @@
 
 
 <!-- Scripts -->
-<script src="assets/js/app.js"></script>
+<!-- fflate ZIP library -->
+<script type="module" src="assets/js/app.js"></script>
 </body>
 </html>
-
-<script type="module">
-  // تهيئة Firebase - الصق إعداداتك هنا
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-  import { getFirestore, collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-  
-  const firebaseConfig = {
-    apiKey: "أكتب_apiKey_هنا",
-    authDomain: "أكتب_authDomain_هنا",
-    projectId: "أكتب_projectId_هنا",
-    storageBucket: "أكتب_storageBucket_هنا",
-    messagingSenderId: "أكتب_messagingSenderId_هنا",
-    appId: "أكتب_appId_هنا"
-  };
-  
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
-  
-  // الآن قاعدة البيانات جاهزة للاستخدام في موقعك
-  
-  // مثال: جلب المنتجات وعرضها في صفحة HTML
-  async function loadProducts() {
-    const querySnapshot = await getDocs(collection(db, "products"));
-    querySnapshot.forEach((doc) => {
-      console.log(doc.id, "=>", doc.data());
-      // يمكنك هنا إضافة كود لعرض المنتجات في HTML الخاص بموقعك
-    });
-  }
-  
-  loadProducts();
-</script>

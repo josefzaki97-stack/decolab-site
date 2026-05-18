@@ -1816,5 +1816,5 @@ body.ar .toast { right: auto; left: 2rem; }
 body.ar .scroll-top { left: auto; right: 2rem; }
 .scroll-top.show { opacity: 1; transform: translateY(0); }
 .scroll-top:hover { background: var(--accent); transform: translateY(-2px); }
-
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-6px)}80%{transform:translateX(6px)}}
 @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-6px)}80%{transform:translateX(6px)}}

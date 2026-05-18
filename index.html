@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- DECOLAB — v3.0 Firebase Edition -->
+<!-- DECOLAB v4.0 -->
 <html lang="fr" dir="ltr">
 <head>
   <meta charset="UTF-8">
@@ -10,22 +10,18 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Jost:wght@300;400;500&family=Noto+Kufi+Arabic:wght@300;400;500&display=swap" rel="stylesheet">
-  <!-- Firebase SDK (compat) — chargé uniquement si Firebase est configuré -->
   <script>
-    /* Load Firebase SDK only when config is saved */
-    (function(){
-      var cfg = null;
-      try { cfg = JSON.parse(localStorage.getItem('decolab_fb_config')||'null'); } catch(e){}
-      if(cfg && cfg.apiKey && cfg.apiKey !== 'VOTRE_API_KEY'){
-        var base = 'https://www.gstatic.com/firebasejs/9.23.0/';
-        var scripts = ['firebase-app-compat.js','firebase-firestore-compat.js'];
-        scripts.forEach(function(s){
-          var el = document.createElement('script');
-          el.src = base + s;
-          document.head.appendChild(el);
+  (function(){
+    try{
+      var cfg=JSON.parse(localStorage.getItem('decolab_fb_config')||'null');
+      if(cfg&&cfg.apiKey&&cfg.apiKey!=='VOTRE_API_KEY'){
+        var base='https://www.gstatic.com/firebasejs/9.23.0/';
+        ['firebase-app-compat.js','firebase-firestore-compat.js'].forEach(function(s){
+          var el=document.createElement('script');el.src=base+s;document.head.appendChild(el);
         });
       }
-    })();
+    }catch(e){}
+  })();
   </script>
   <link rel="stylesheet" href="assets/css/style.css">
 </head>

@@ -1,36 +1,35 @@
-# DECOLAB — Site E-commerce Décoration Intérieure
-# Firebase Edition — v3.0
+# DECOLAB v4.0 — Site E-commerce Decoration Interieure
 
-## Structure du dossier
-    decolab-site/
-    ├── index.html              ← Ouvrir dans le navigateur
-    ├── assets/
-    │   ├── css/style.css       ← Tous les styles
-    │   └── js/app.js           ← Logique + Firebase + produits
-    └── README.md
+## Structure
+  decolab-site/
+  ├── index.html              <- Ouvrir dans le navigateur (double-clic)
+  ├── assets/
+  │   ├── css/style.css       <- Styles
+  │   └── js/app.js           <- Logique complete
+  └── README.md
 
-## Lancer le site localement
+## Lancer
 Double-cliquez sur index.html
 
-## Mettre en ligne gratuitement
-- Netlify : glissez le dossier sur https://app.netlify.com/drop
-- Vercel  : https://vercel.com
-- GitHub Pages : uploadez sur GitHub et activez Pages
+## Mettre en ligne
+- Netlify: glissez le dossier sur https://app.netlify.com/drop
+- Vercel: https://vercel.com
+- GitHub Pages: uploadez sur GitHub > Settings > Pages
 
-## Configurer Firebase (base de données cloud)
-1. Créez un projet sur https://console.firebase.google.com
-2. Activez Firestore Database (mode test)
-3. Paramètres > Vos applications > Ajouter app Web > copiez les clés
-4. Dans le site : Admin > Firebase > collez les clés > Connecter
-5. Rechargez la page
+## Firebase (optionnel)
+1. https://console.firebase.google.com -> nouveau projet
+2. Activer Firestore Database (mode test)
+3. Parametres > Applications > Ajouter app Web > copier les cles
+4. Dans le site: Admin > Firebase > coller les cles > Connecter
+5. Recharger la page
 
-## Accès Admin
-Bouton Admin (haut droite) -> mot de passe : decolab2025
-Pour changer : modifiez const ADMIN_PASS dans assets/js/app.js
+## Admin
+Mot de passe: decolab2025
+Bouton Admin en haut a droite
 
-## WhatsApp Business
-Numéro : +212 691 010 969
-Modifiable dans Admin -> barre WhatsApp
+## WhatsApp
++212 691 010 969
+Modifiable dans Admin > barre WhatsApp
 
 ## Compatible
 Chrome, Firefox, Safari, Edge, Mobile, Tablette, Arabe RTL

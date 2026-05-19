@@ -74,6 +74,9 @@ var T = {
     loginTitle:'Espace Administrateur',loginSub:'Accès sécurisé',loginPwLbl:'Mot de passe',loginBtn:'Se connecter',loginCancel:'Annuler',loginErr:'Mot de passe incorrect.',
     pmOrder:'Commander via WhatsApp',pmShare:'Partager ce produit',pmPod:'Paiement à la livraison',
     dlBtn:'Télécharger le site',dlTitle:'Préparation...',dlDesc:'Construction des fichiers.',dlDone:'Site téléchargé !',
+    autoSaveOn:'Sauvegarde auto activée',autoSaveOff:'Sauvegarde auto désactivée',
+    autoSaveLblMain:'Sauvegarde auto',autoSaveLblOn:'Active — se déclenche à chaque modification',autoSaveLblOff:'Désactivée',
+    autoSaveSaving:'Sauvegarde en cours...',autoSaveDone:'Fichier sauvegardé !',autoSaveFile:'decolab.html mis à jour',
     dbIoLabel:'Base de données',dbExportLbl:'Exporter JSON',dbImportLbl:'Importer JSON',dbAddBtn:'+ Ajouter',dbSearch:'Rechercher...',
     dbThImg:'Image',dbThId:'ID',dbThName:'Nom',dbThCat:'Catégorie',dbThPrice:'Prix',dbThDate:'Ajouté le',dbThAct:'Actions',
     dbEmpty:'Aucun produit.',dbEmptyHint:'Commencez par ajouter un produit.',dbDrawerTitle:'Détail produit',dbEditBtn:'Modifier',dbDelBtn:'Supprimer',
@@ -109,6 +112,9 @@ var T = {
     loginTitle:'لوحة الإدارة',loginSub:'وصول آمن',loginPwLbl:'كلمة المرور',loginBtn:'دخول',loginCancel:'إلغاء',loginErr:'كلمة المرور غير صحيحة.',
     pmOrder:'اطلب عبر واتساب',pmShare:'مشاركة المنتج',pmPod:'الدفع عند الاستلام',
     dlBtn:'تحميل الموقع',dlTitle:'جاهز...',dlDesc:'بناء الملفات.',dlDone:'تم تحميل الموقع!',
+    autoSaveOn:'تم تفعيل الحفظ التلقائي',autoSaveOff:'تم إيقاف الحفظ التلقائي',
+    autoSaveLblMain:'حفظ تلقائي',autoSaveLblOn:'نشط — يحفظ عند كل تعديل',autoSaveLblOff:'معطل',
+    autoSaveSaving:'جارٍ الحفظ...',autoSaveDone:'تم حفظ الملف!',autoSaveFile:'decolab.html محدّث',
     dbIoLabel:'قاعدة البيانات',dbExportLbl:'تصدير JSON',dbImportLbl:'استيراد JSON',dbAddBtn:'+ إضافة',dbSearch:'البحث...',
     dbThImg:'الصورة',dbThId:'المعرف',dbThName:'الاسم',dbThCat:'الفئة',dbThPrice:'السعر',dbThDate:'تاريخ الإضافة',dbThAct:'الإجراءات',
     dbEmpty:'لا توجد منتجات.',dbEmptyHint:'ابدأ بإضافة منتج.',dbDrawerTitle:'تفاصيل المنتج',dbEditBtn:'تعديل',dbDelBtn:'حذف',
@@ -286,21 +292,306 @@ function loadFbConfig(){
   try { return JSON.parse(localStorage.getItem('decolab_fb_config')||'null'); } catch(e){ return null; }
 }
 
+/* ═══════════════════════════════════════════════════════
+   FIREBASE AUTO-CONNECT ENGINE
+   - Parse du bloc firebaseConfig collé
+   - Connexion automatique sans rechargement
+   - Affichage du statut en temps réel
+   - Sauvegarde dans localStorage
+═══════════════════════════════════════════════════════ */
+
 function prefillFbForm(){
   var cfg = loadFbConfig(); if(!cfg) return;
   Object.assign(FIREBASE_CONFIG, cfg);
+  /* Fill manual fields */
   var map={'fb-api-key':'apiKey','fb-auth-domain':'authDomain','fb-project-id':'projectId','fb-storage':'storageBucket','fb-sender-id':'messagingSenderId','fb-app-id':'appId'};
   Object.keys(map).forEach(function(id){var el=document.getElementById(id);if(el)el.value=cfg[map[id]]||'';});
+  /* Fill paste area */
+  var pa = document.getElementById('fb-paste-area');
+  if(pa && cfg.apiKey && cfg.apiKey !== 'VOTRE_API_KEY'){
+    pa.value = 'const firebaseConfig = ' + JSON.stringify(cfg, null, 2) + ';';
+    showFbParsePreview(cfg);
+  }
+  /* Update status pill if already connected */
+  if(_fbOK) setFbStatusPill('connected');
+  else if(cfg.apiKey && cfg.apiKey !== 'VOTRE_API_KEY') setFbStatusPill('saved');
 }
 
-function saveFbConfig(){
-  var fields=['fb-api-key','fb-auth-domain','fb-project-id','fb-storage','fb-sender-id','fb-app-id'];
-  var vals=fields.map(function(id){return (document.getElementById(id)||{}).value||'';});
-  if(vals.some(function(v){return !v;})){showToast('Remplissez tous les champs Firebase');return;}
-  var cfg={apiKey:vals[0],authDomain:vals[1],projectId:vals[2],storageBucket:vals[3],messagingSenderId:vals[4],appId:vals[5]};
-  localStorage.setItem('decolab_fb_config',JSON.stringify(cfg));
-  showToast('Configuration sauvegardée — rechargez la page pour activer Firebase','ok-t');
+/* Parse the pasted firebaseConfig block */
+function parseFbBlock(text){
+  var cfg = {};
+  var keys = ['apiKey','authDomain','projectId','storageBucket','messagingSenderId','appId'];
+  keys.forEach(function(k){
+    var re = new RegExp(k+'\\s*:\\s*["\']([^"\']+)["\']');
+    var m = text.match(re);
+    if(m) cfg[k] = m[1];
+  });
+  /* Also try JSON parse directly */
+  if(Object.keys(cfg).length < 3){
+    try{
+      var jsonMatch = text.match(/\{[\s\S]+\}/);
+      if(jsonMatch){ var parsed=JSON.parse(jsonMatch[0]); if(parsed.apiKey) cfg=parsed; }
+    }catch(e){}
+  }
+  return Object.keys(cfg).length >= 3 ? cfg : null;
 }
+
+function onFbPasteChange(){
+  var text = (document.getElementById('fb-paste-area')||{}).value||'';
+  var cfg = parseFbBlock(text);
+  if(cfg){
+    showFbParsePreview(cfg);
+    /* Auto-fill manual fields */
+    var map={'fb-api-key':'apiKey','fb-auth-domain':'authDomain','fb-project-id':'projectId','fb-storage':'storageBucket','fb-sender-id':'messagingSenderId','fb-app-id':'appId'};
+    Object.keys(map).forEach(function(id){var el=document.getElementById(id);if(el)el.value=cfg[map[id]]||'';});
+  } else {
+    var pr=document.getElementById('fb-parse-result');
+    if(pr){pr.style.display='none';}
+  }
+}
+
+function onFbFieldChange(){
+  var map={'fb-api-key':'apiKey','fb-auth-domain':'authDomain','fb-project-id':'projectId','fb-storage':'storageBucket','fb-sender-id':'messagingSenderId','fb-app-id':'appId'};
+  var cfg={};
+  Object.keys(map).forEach(function(id){
+    var el=document.getElementById(id);
+    if(el&&el.value.trim()) cfg[map[id]]=el.value.trim();
+  });
+  if(Object.keys(cfg).length>=3) showFbParsePreview(cfg);
+}
+
+function showFbParsePreview(cfg){
+  var pr=document.getElementById('fb-parse-result'); if(!pr) return;
+  var keys=['apiKey','authDomain','projectId','storageBucket','messagingSenderId','appId'];
+  var found=keys.filter(function(k){return cfg[k];});
+  var missing=keys.filter(function(k){return !cfg[k];});
+  var ok=missing.length===0;
+  pr.style.display='block';
+  pr.style.background=ok?'rgba(37,211,102,.08)':'rgba(232,168,56,.08)';
+  pr.style.border='1px solid '+(ok?'rgba(37,211,102,.25)':'rgba(232,168,56,.3)');
+  pr.style.color=ok?'var(--text)':'var(--text)';
+  pr.innerHTML=(ok?'✅ ':'⚠️ ')+'<strong>'+(ok?'Configuration valide — '+found.length+'/6 clés détectées':'Configuration incomplète — '+found.length+'/6 clés')+' :</strong><br>'
+    +'<span style="color:var(--muted);font-family:monospace;font-size:.72rem">'
+    +found.map(function(k){return '✓ '+k+': "'+cfg[k].substring(0,20)+(cfg[k].length>20?'...':'')+'"';}).join('<br>')
+    +(missing.length?'<br>'+missing.map(function(k){return '<span style="color:#E8A838">✗ '+k+' manquant</span>';}).join('<br>'):'')
+    +'</span>';
+}
+
+function toggleFbManual(){
+  var el=document.getElementById('fb-manual-fields');
+  var arr=document.getElementById('fb-manual-arrow');
+  if(!el) return;
+  var open=el.style.display==='block';
+  el.style.display=open?'none':'block';
+  if(arr) arr.style.transform=open?'':'rotate(180deg)';
+}
+
+function setFbStatusPill(status){
+  var pill=document.getElementById('fb-status-pill'); if(!pill) return;
+  var map={
+    connected:{bg:'rgba(37,211,102,.25)',color:'#1a8c4a',text:'🔥 Connecté'},
+    saved:{bg:'rgba(255,107,53,.2)',color:'#CC4400',text:'💾 Config sauvegardée'},
+    connecting:{bg:'rgba(255,107,53,.15)',color:'#CC4400',text:'⏳ Connexion...'},
+    error:{bg:'rgba(226,75,74,.2)',color:'#a33',text:'❌ Erreur'},
+    disconnected:{bg:'rgba(0,0,0,.15)',color:'#fff',text:'⚫ Non connecté'}
+  };
+  var m=map[status]||map.disconnected;
+  pill.style.background=m.bg; pill.style.color=m.color; pill.textContent=m.text;
+}
+
+function fbLog(msg){
+  var el=document.getElementById('fb-log'); if(!el) return;
+  var now=new Date().toLocaleTimeString('fr-FR');
+  el.innerHTML+='['+now+'] '+msg+'<br>';
+  el.scrollTop=el.scrollHeight;
+}
+
+function setFbProgress(pct){
+  var bar=document.getElementById('fb-progress-bar'); if(bar) bar.style.width=pct+'%';
+}
+
+function connectFirebaseNow(){
+  /* 1 — Parse config from paste area or manual fields */
+  var cfg = null;
+  var paText = (document.getElementById('fb-paste-area')||{}).value||'';
+  if(paText.trim()) cfg = parseFbBlock(paText);
+  if(!cfg){
+    var map={'fb-api-key':'apiKey','fb-auth-domain':'authDomain','fb-project-id':'projectId','fb-storage':'storageBucket','fb-sender-id':'messagingSenderId','fb-app-id':'appId'};
+    var tmp={};
+    Object.keys(map).forEach(function(id){var el=document.getElementById(id);if(el&&el.value.trim())tmp[map[id]]=el.value.trim();});
+    if(Object.keys(tmp).length>=3) cfg=tmp;
+  }
+  if(!cfg || !cfg.apiKey){
+    showToast('Collez votre firebaseConfig ou remplissez les champs');
+    return;
+  }
+
+  /* 2 — Show progress card */
+  var card=document.getElementById('fb-connection-card');
+  var succ=document.getElementById('fb-success-stats');
+  if(card){card.style.display='block';card.style.background='var(--gray-50)';card.style.borderColor='var(--border)';}
+  if(succ) succ.style.display='none';
+  document.getElementById('fb-card-icon').textContent='⏳';
+  document.getElementById('fb-card-title').textContent='Connexion en cours...';
+  document.getElementById('fb-card-sub').textContent='Initialisation du SDK Firebase';
+  document.getElementById('fb-log').innerHTML='';
+  document.getElementById('fb-connect-btn-lbl').textContent='Connexion...';
+  document.getElementById('fb-connect-btn').disabled=true;
+  setFbProgress(10);
+  setFbStatusPill('connecting');
+
+  fbLog('Config détectée — Project: '+cfg.projectId);
+  setFbProgress(25);
+
+  /* 3 — Save config */
+  Object.assign(FIREBASE_CONFIG, cfg);
+  localStorage.setItem('decolab_fb_config', JSON.stringify(cfg));
+  fbLog('Configuration sauvegardée dans localStorage ✓');
+  setFbProgress(40);
+
+  /* 4 — Load Firebase SDK dynamically */
+  fbLog('Chargement du SDK Firebase...');
+  var base='https://www.gstatic.com/firebasejs/9.23.0/';
+  var loaded=0; var total=2; var failed=false;
+
+  function onSDKLoad(){
+    loaded++;
+    fbLog('SDK '+loaded+'/'+total+' chargé ✓');
+    setFbProgress(40+loaded*15);
+    if(loaded===total && !failed) doConnect(cfg);
+  }
+  function onSDKError(name){
+    failed=true;
+    fbLog('Erreur chargement '+name+' — vérifiez votre connexion');
+    showFbError('Impossible de charger le SDK Firebase. Vérifiez votre connexion internet.');
+  }
+
+  /* Check if already loaded */
+  if(window.firebase && firebase.firestore){
+    fbLog('SDK déjà chargé ✓');
+    setFbProgress(70);
+    doConnect(cfg);
+    return;
+  }
+
+  ['firebase-app-compat.js','firebase-firestore-compat.js'].forEach(function(s){
+    var el=document.createElement('script');
+    el.src=base+s;
+    el.onload=onSDKLoad;
+    el.onerror=function(){onSDKError(s);};
+    document.head.appendChild(el);
+  });
+}
+
+function doConnect(cfg){
+  fbLog('SDK chargé — initialisation de l\'app...');
+  setFbProgress(72);
+
+  try{
+    /* Init or reuse Firebase app */
+    try{firebase.app();}catch(e){firebase.initializeApp(cfg);}
+    fbLog('App Firebase initialisée ✓');
+    setFbProgress(80);
+
+    /* Get Firestore */
+    _fsDb = firebase.firestore();
+    fbLog('Connexion à Firestore en cours...');
+    setFbProgress(88);
+
+    /* Test connection with a real read */
+    _fsDb.collection('products').limit(1).get().then(function(snap){
+      fbLog('Firestore accessible ✓ — '+snap.size+' document(s) de test lus');
+      setFbProgress(100);
+      _fbOK = true;
+
+      /* Load all products */
+      fbLog('Chargement des produits...');
+      fbLoadProds();
+      fbListen();
+      fbLoadMeta();
+
+      /* Show success UI */
+      document.getElementById('fb-card-icon').textContent='✅';
+      document.getElementById('fb-card-title').textContent='Connexion réussie !';
+      document.getElementById('fb-card-sub').textContent='Firebase Firestore est maintenant actif';
+      document.getElementById('fb-connection-card').style.background='rgba(37,211,102,.05)';
+      document.getElementById('fb-connection-card').style.borderColor='rgba(37,211,102,.2)';
+      setFbStatusPill('connected');
+      showDbStatus('firebase');
+
+      /* Success stats */
+      setTimeout(function(){
+        var succ=document.getElementById('fb-success-stats');
+        if(succ){
+          succ.style.display='block';
+          document.getElementById('fb-success-title').textContent='🔥 Firebase Firestore actif';
+          document.getElementById('fb-success-project').textContent='Projet : '+cfg.projectId;
+          document.getElementById('fb-stats-grid').innerHTML=
+            fbStatCard('📦','Produits',prods.length+' en base')
+            +fbStatCard('🔄','Sync','Temps réel')
+            +fbStatCard('☁️','Stockage','Cloud Firestore');
+        }
+      }, 600);
+
+      /* Update connect button */
+      document.getElementById('fb-connect-btn-lbl').textContent='Reconnecter';
+      document.getElementById('fb-connect-btn').disabled=false;
+      showToast('🔥 Firebase connecté !','ok-t');
+      renderAdmTbl(); renderDashRecent();
+
+    }).catch(function(e){
+      fbLog('Erreur Firestore : '+e.message);
+      showFbError(e.message);
+    });
+
+  }catch(e){
+    fbLog('Erreur initialisation : '+e.message);
+    showFbError(e.message);
+  }
+}
+
+function fbStatCard(icon, title, sub){
+  return '<div style="background:var(--white);border:1px solid var(--border);border-radius:6px;padding:.85rem;text-align:center">'
+    +'<div style="font-size:1.3rem;margin-bottom:.3rem">'+icon+'</div>'
+    +'<div style="font-size:.78rem;font-weight:500;color:var(--brown-800)">'+title+'</div>'
+    +'<div style="font-size:.72rem;color:var(--muted)">'+sub+'</div>'
+    +'</div>';
+}
+
+function showFbError(msg){
+  document.getElementById('fb-card-icon').textContent='❌';
+  document.getElementById('fb-card-title').textContent='Erreur de connexion';
+  document.getElementById('fb-card-sub').textContent=msg;
+  document.getElementById('fb-connection-card').style.background='rgba(226,75,74,.05)';
+  document.getElementById('fb-connection-card').style.borderColor='rgba(226,75,74,.25)';
+  setFbStatusPill('error');
+  document.getElementById('fb-connect-btn-lbl').textContent='Réessayer';
+  document.getElementById('fb-connect-btn').disabled=false;
+  showToast('Erreur Firebase : '+msg.substring(0,60));
+}
+
+function disconnectFirebase(){
+  _fbOK=false; _fsDb=null;
+  if(_unsubscribe){_unsubscribe();_unsubscribe=null;}
+  localStorage.removeItem('decolab_fb_config');
+  Object.assign(FIREBASE_CONFIG,{apiKey:'VOTRE_API_KEY',authDomain:'',projectId:'',storageBucket:'',messagingSenderId:'',appId:''});
+  /* Clear form */
+  var pa=document.getElementById('fb-paste-area'); if(pa) pa.value='';
+  var pr=document.getElementById('fb-parse-result'); if(pr) pr.style.display='none';
+  var card=document.getElementById('fb-connection-card'); if(card) card.style.display='none';
+  var succ=document.getElementById('fb-success-stats'); if(succ) succ.style.display='none';
+  ['fb-api-key','fb-auth-domain','fb-project-id','fb-storage','fb-sender-id','fb-app-id'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+  setFbStatusPill('disconnected');
+  showDbStatus('demo');
+  /* Reload from IndexedDB */
+  idbOpen(function(){ renderProds(); renderAdmTbl(); renderDashRecent(); });
+  showToast('Firebase déconnecté — mode IndexedDB local');
+}
+
+/* Keep old function name for compatibility */
+function saveFbConfig(){ connectFirebaseNow(); }
+
+
 
 /* ─── LANGUAGE ─── */
 function toggleLang(){
@@ -333,6 +624,10 @@ function applyLang(){
   setT('ftr-desc',t.ftrDesc); setT('ftr-nav-h',t.ftrNavH); setT('ftr-cont-h',t.ftrContH); setT('ftr-btm',t.ftrBtm);
   setT('login-title',t.loginTitle); setT('login-sub',t.loginSub); setT('login-pw-lbl',t.loginPwLbl); setT('login-btn',t.loginBtn); setT('login-cancel',t.loginCancel);
   setT('dl-btn-lbl',t.dlBtn);
+  setT('autosave-label-main', t.autoSaveLblMain);
+  updateAutoSaveUI();
+
+/* ─── AUTO-SAVE ENGINE ─── */
   setT('db-io-label',t.dbIoLabel); setT('db-export-lbl',t.dbExportLbl); setT('db-import-lbl',t.dbImportLbl); setT('db-add-btn',t.dbAddBtn);
   var ds=document.getElementById('db-search'); if(ds) ds.placeholder=t.dbSearch;
   setT('dbth-img',t.dbThImg); setT('dbth-id',t.dbThId); setT('dbth-name',t.dbThName); setT('dbth-cat',t.dbThCat); setT('dbth-price',t.dbThPrice); setT('dbth-date',t.dbThDate); setT('dbth-act',t.dbThAct);
@@ -476,6 +771,7 @@ function saveWa(){
   ['st-wa-val','ftr-phone','ftr-wa-num'].forEach(function(id){var el=document.getElementById(id);if(el)el.textContent=v;});
   renderProds(); renderAdmTbl();
   showToast(T[lang].toastWa,'wa-t');
+  triggerAutoSave();
 }
 
 /* ─── ADMIN LOGIN ─── */
@@ -571,6 +867,7 @@ function saveProduct(){
   }
   closeModal(); renderProds(); renderAdmTbl(); renderDashRecent();
   showToast(T[lang].toastSv,'ok-t');
+  triggerAutoSave();
 }
 
 function delProd(id){
@@ -578,6 +875,7 @@ function delProd(id){
   prods=prods.filter(function(p){return String(p.id)!==String(id);});
   fbDeleteProduct(id); renderProds(); renderAdmTbl(); renderDashRecent();
   showToast(T[lang].toastDl);
+  triggerAutoSave();
 }
 
 /* ─── DATABASE TABLE ─── */
@@ -682,6 +980,103 @@ function dbImportJSON(input){
   reader.readAsText(file); input.value='';
 }
 
+/* ═══════════════════════════════════════════════════════
+   AUTO-SAVE ENGINE
+   Sauvegarde automatique du fichier HTML sur l'ordinateur
+   à chaque modification de produit
+═══════════════════════════════════════════════════════ */
+var _autoSaveOn    = false;
+var _saveCount     = 0;
+var _autoSaveTimer = null;
+
+function toggleAutoSave(){
+  _autoSaveOn = !_autoSaveOn;
+  updateAutoSaveUI();
+  showToast(T[lang][_autoSaveOn?'autoSaveOn':'autoSaveOff'], _autoSaveOn?'wa-t':'');
+  try{localStorage.setItem('decolab_autosave',_autoSaveOn?'1':'0');}catch(e){}
+}
+
+function loadAutoSavePref(){
+  try{
+    var v=localStorage.getItem('decolab_autosave');
+    if(v==='1'){_autoSaveOn=true; updateAutoSaveUI();}
+  }catch(e){}
+}
+
+function updateAutoSaveUI(){
+  var bar   = document.getElementById('autosave-bar');
+  var sub   = document.getElementById('autosave-label-sub');
+  var badge = document.getElementById('save-count-badge');
+  if(bar)   bar.classList.toggle('on', _autoSaveOn);
+  if(sub)   sub.textContent = T[lang][_autoSaveOn?'autoSaveLblOn':'autoSaveLblOff'];
+  if(badge){badge.textContent=_saveCount; badge.classList.toggle('show',_saveCount>0);}
+}
+
+/* Appeler après chaque modification */
+function triggerAutoSave(){
+  if(!_autoSaveOn) return;
+  clearTimeout(_autoSaveTimer);
+  _autoSaveTimer = setTimeout(function(){ doAutoSave(); }, 800);
+}
+
+function doAutoSave(){
+  var st   = document.getElementById('autosave-status');
+  var spin = document.getElementById('autosave-spin');
+  var ok   = document.getElementById('autosave-ok');
+  var msg  = document.getElementById('autosave-msg');
+  var time = document.getElementById('autosave-time');
+
+  st.classList.remove('saved');
+  st.classList.add('show','saving');
+  if(spin) spin.style.display='';
+  if(ok)   ok.style.display='none';
+  if(msg)  msg.textContent=T[lang].autoSaveSaving;
+  if(time) time.textContent='';
+
+  setTimeout(function(){
+    try{
+      var html = buildAutoSaveHTML();
+      var blob = new Blob([html],{type:'text/html;charset=utf-8'});
+      var url  = URL.createObjectURL(blob);
+      var a    = document.createElement('a');
+      a.href=url; a.download='decolab.html';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(function(){URL.revokeObjectURL(url);},3000);
+
+      _saveCount++;
+      updateAutoSaveUI();
+
+      st.classList.remove('saving'); st.classList.add('saved');
+      if(spin) spin.style.display='none';
+      if(ok)   ok.style.display='';
+      if(msg)  msg.textContent=T[lang].autoSaveDone;
+      if(time) time.textContent=T[lang].autoSaveFile+' — '+new Date().toLocaleTimeString('fr-FR');
+
+      setTimeout(function(){
+        st.classList.remove('show','saving','saved');
+        if(spin) spin.style.display='';
+        if(ok)   ok.style.display='none';
+      }, 3500);
+
+    }catch(e){
+      console.warn('Auto-save error:',e);
+      st.classList.remove('show','saving','saved');
+    }
+  }, 400);
+}
+
+function buildAutoSaveHTML(){
+  var h = document.documentElement.outerHTML;
+  var pj = JSON.stringify(prods, null, 2);
+  /* Inject current products */
+  h = h.replace(/var DEMO_PRODS\s*=\s*\[[\s\S]*?\];/, 'var DEMO_PRODS = '+pj+';');
+  /* Inject current waNum */
+  h = h.replace(/var waNum\s*=\s*'[^']*';/, "var waNum = '"+waNum+"';");
+  /* Add timestamp */
+  h = h.replace('<!DOCTYPE html>', '<!DOCTYPE html>\n<!-- DECOLAB Auto-save '+new Date().toLocaleString('fr-FR')+' | '+prods.length+' produit(s) -->');
+  return h;
+}
+
 /* ─── TOAST ─── */
 function showToast(msg,cls){
   var t=document.getElementById('toast');
@@ -753,8 +1148,9 @@ function crc32zip(data){var c=0xFFFFFFFF;for(var i=0;i<data.length;i++){c^=data[
 
 /* ─── DOMContentLoaded — synchrone, aucun await bloquant ─── */
 document.addEventListener('DOMContentLoaded', function(){
-  // 1. Charger la config Firebase sauvegardée
+  // 1. Charger la config Firebase + préférences sauvegardées
   prefillFbForm();
+  loadAutoSavePref();
 
   // 2. Ouvrir IndexedDB et afficher les produits immédiatement
   idbOpen(function(){
